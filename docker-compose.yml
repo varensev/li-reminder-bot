@@ -5,6 +5,7 @@ services:
     build: .
     container_name: telegram-reminder-bot
     restart: unless-stopped
+    env_file: .env
     environment:
       - NODE_ENV=production
     volumes:
