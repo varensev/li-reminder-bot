@@ -171,7 +171,7 @@ bot.onText(/\/interval (\d+)/, async (msg, match) => {
   const chatId = msg.chat.id;
   const minutes = parseInt(match[1]);
   
-  if (isNaN(minutes) {
+  if (isNaN(minutes)) {
     return sendCommandKeyboard(chatId, 'Неверный формат интервала. Укажите число минут.');
   }
   
