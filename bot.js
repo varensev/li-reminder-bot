@@ -109,7 +109,7 @@ bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   try {
     await initDatabase();
-    sendCommandKeyboard(chatId, `Привет! Я буду напоминать тебе о необходимости публикации.\nПо умолчанию интервал напоминаний - 60 минут.`);
+    sendCommandKeyboard(chatId, `Привет Ли! Я буду напоминать тебе о необходимости публикации.\nПо умолчанию интервал напоминаний - 60 минут.`);
   } catch (error) {
     console.error('Ошибка в команде /start:', error);
     bot.sendMessage(chatId, 'Произошла ошибка при инициализации. Пожалуйста, попробуйте позже.');
