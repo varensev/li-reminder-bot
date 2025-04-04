@@ -2,6 +2,9 @@
 
 ## Overview
 
+Project Name: LI Reminder Bot (li-reminder-bot)
+Telegram Bot: @reminder_li_bot
+
 This project provides a Dockerized Telegram bot for sending publication reminders, designed for deployment on Aeza hosting. The bot integrates with Supabase for data storage and uses Node.js with the `node-telegram-bot-api` library.
 
 ## Project Structure
