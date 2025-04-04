@@ -7,7 +7,7 @@ This project provides a Dockerized Telegram bot for sending publication reminder
 ## Project Structure
 
 ```
-telegram-reminder-bot/
+li-reminder-bot/
 ├── Dockerfile            # Docker container configuration
 ├── docker-compose.yml    # Orchestration configuration
 ├── bot.js                # Main bot application code
@@ -26,8 +26,8 @@ telegram-reminder-bot/
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-repository/telegram-reminder-bot.git
-   cd telegram-reminder-bot
+   git clone https://github.com/your-repository/li-reminder-bot.git
+   cd li-reminder-bot
    ```
 
 2. Create `.env` file:
@@ -65,7 +65,7 @@ version: '3.8'
 services:
   bot:
     build: .
-    container_name: telegram-reminder-bot
+    container_name: li-reminder-bot
     restart: unless-stopped
     env_file: .env
     environment:
@@ -77,7 +77,7 @@ services:
 ### package.json
 ```json
 {
-  "name": "telegram-reminder-bot",
+  "name": "li-reminder-bot",
   "version": "1.0.0",
   "description": "Telegram bot for publication reminders with Supabase",
   "main": "bot.js",
@@ -119,8 +119,8 @@ services:
 ### Bot Deployment
 1. Clone your repository:
    ```bash
-   git clone https://github.com/your-repository/telegram-reminder-bot.git
-   cd telegram-reminder-bot
+   git clone https://github.com/your-repository/li-reminder-bot.git
+   cd li-reminder-bot
    ```
 
 2. Create and configure the `.env` file as shown in Quick Start
@@ -132,14 +132,14 @@ services:
 
 4. Verify operation:
    ```bash
-   docker logs -f telegram-reminder-bot
+   docker logs -f li-reminder-bot
    ```
 
 ## Maintenance
 
 ### Updating the Bot
 ```bash
-cd ~/telegram-reminder-bot
+cd ~/li-reminder-bot
 git pull
 docker-compose down
 docker-compose build --no-cache
@@ -153,7 +153,7 @@ docker-compose down
 
 ### Viewing Logs
 ```bash
-docker logs -f telegram-reminder-bot
+docker logs -f li-reminder-bot
 ```
 
 ## Security Recommendations
@@ -189,7 +189,7 @@ docker logs -f telegram-reminder-bot
 If you encounter issues:
 1. Check container logs:
    ```bash
-   docker logs telegram-reminder-bot
+   docker logs li-reminder-bot
    ```
 2. Verify container status:
    ```bash
