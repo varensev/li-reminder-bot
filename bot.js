@@ -20,6 +20,32 @@ const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {polling: true});
 // Объект для хранения активных задач cron
 const activeTasks = {};
 
+// Функция для отправки клавиатуры с командами
+function sendCommandKeyboard(chatId, message = '') {
+  const keyboard = {
+    reply_markup: {
+      keyboard: [
+        ['🔔 Включить напоминания', '🔕 Выключить напоминания'],
+        ['⏱ 30 мин', '⏱ 60 мин', '⏱ 120 мин'],
+        ['✅ Публикация сделана']
+      ],
+      resize_keyboard: true
+    }
+  };
+  
+  if (message) {
+    bot.sendMessage(chatId, message, keyboard);
+  } else {
+    const defaultMessage = `Доступные команды:\n
+🔔 Включить напоминания - начать напоминания
+🔕 Выключить напоминания - остановить напоминания
+⏱ 30/60/120 мин - установить интервал
+✅ Публикация сделана - отметить публикацию`;
+    
+    bot.sendMessage(chatId, defaultMessage, keyboard);
+  }
+}
+
 // Инициализация базы данных
 async function initDatabase() {
   try {
@@ -49,64 +75,12 @@ async function initDatabase() {
     }
   } catch (error) {
     console.error('Ошибка при инициализации базы данных:', error.message);
-    process.exit(1);
+    throw error;
   }
 }
 
-// Функция для отправки клавиатуры с командами
-function sendCommandKeyboard(chatId, message = '') {
-  const keyboard = {
-    reply_markup: {
-      keyboard: [
-        ['🔔 Включить напоминания', '🔕 Выключить напоминания'],
-        ['⏱ 30 мин', '⏱ 60 мин', '⏱ 120 мин'],
-        ['✅ Публикация сделана']
-      ],
-      resize_keyboard: true
-    }
-  };
-  
-  if (message) {
-    bot.sendMessage(chatId, message, keyboard);
-  } else {
-    const defaultMessage = `Доступные команды:\n
-🔔 Включить напоминания - начать напоминания
-🔕 Выключить напоминания - остановить напоминания
-⏱ 30/60/120 мин - установить интервал
-✅ Публикация сделана - отметить публикацию`;
-    
-    bot.sendMessage(chatId, defaultMessage, keyboard);
-  }
-}
-
-// Обработка текстовых команд (для кнопок)
-bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-  const text = msg.text;
-
-  if (text === '🔔 Включить напоминания') {
-    bot.onText(/\/remind/, msg);
-  } 
-  else if (text === '🔕 Выключить напоминания') {
-    bot.onText(/\/stop/, msg);
-  }
-  else if (text === '✅ Публикация сделана') {
-    bot.onText(/\/published/, msg);
-  }
-  else if (text === '⏱ 30 мин') {
-    bot.onText(/\/interval 30/, msg);
-  }
-  else if (text === '⏱ 60 мин') {
-    bot.onText(/\/interval 60/, msg);
-  }
-  else if (text === '⏱ 120 мин') {
-    bot.onText(/\/interval 120/, msg);
-  }
-});
-
-// Команда /start
-bot.onText(/\/start/, async (msg) => {
-  const chatId = msg.chat.id;
+// Обработка команды /start
+async function handleStartCommand(chatId) {
   try {
     await initDatabase();
     sendCommandKeyboard(chatId, `Привет Ли! Я буду напоминать тебе о необходимости публикации.\nПо умолчанию интервал напоминаний - 60 минут.`);
@@ -114,12 +88,10 @@ bot.onText(/\/start/, async (msg) => {
     console.error('Ошибка в команде /start:', error);
     bot.sendMessage(chatId, 'Произошла ошибка при инициализации. Пожалуйста, попробуйте позже.');
   }
-});
+}
 
-// Команда /remind - начать напоминания
-bot.onText(/\/remind/, async (msg) => {
-  const chatId = msg.chat.id;
-  
+// Обработка команды включения напоминаний
+async function handleRemindCommand(chatId) {
   try {
     // Проверяем существующие напоминания
     const { data: existing, error: checkError } = await supabase
@@ -188,13 +160,10 @@ bot.onText(/\/remind/, async (msg) => {
     console.error('Ошибка при включении напоминаний:', error);
     bot.sendMessage(chatId, 'Произошла ошибка. Пожалуйста, попробуйте позже.');
   }
-});
+}
 
-// Команда /interval - изменить интервал
-bot.onText(/\/interval (\d+)/, async (msg, match) => {
-  const chatId = msg.chat.id;
-  const minutes = parseInt(match[1]);
-  
+// Обработка команды изменения интервала
+async function handleIntervalCommand(chatId, minutes) {
   if (isNaN(minutes)) {
     return sendCommandKeyboard(chatId, 'Неверный формат интервала. Пожалуйста, укажите число минут.');
   }
@@ -229,7 +198,7 @@ bot.onText(/\/interval (\d+)/, async (msg, match) => {
       
     if (data?.active) {
       bot.sendMessage(chatId, `Интервал изменен на ${minutes} минут. Перезапускаю напоминания...`);
-      return bot.onText(/\/remind/, msg);
+      return handleRemindCommand(chatId);
     }
     
     sendCommandKeyboard(chatId, `Интервал установлен на ${minutes} минут. Нажми "Включить напоминания" для старта.`);
@@ -237,12 +206,10 @@ bot.onText(/\/interval (\d+)/, async (msg, match) => {
     console.error('Ошибка при изменении интервала:', error);
     bot.sendMessage(chatId, 'Произошла ошибка при изменении интервала.');
   }
-});
+}
 
-// Команда /stop - остановить напоминания
-bot.onText(/\/stop/, async (msg) => {
-  const chatId = msg.chat.id;
-  
+// Обработка команды отключения напоминаний
+async function handleStopCommand(chatId) {
   try {
     // Останавливаем задачу cron
     if (activeTasks[chatId]) {
@@ -263,12 +230,10 @@ bot.onText(/\/stop/, async (msg) => {
     console.error('Ошибка при отключении напоминаний:', error);
     bot.sendMessage(chatId, 'Произошла ошибка при отключении напоминаний.');
   }
-});
+}
 
-// Команда /published - отметить публикацию
-bot.onText(/\/published/, async (msg) => {
-  const chatId = msg.chat.id;
-  
+// Обработка команды отметки публикации
+async function handlePublishedCommand(chatId) {
   try {
     // Останавливаем задачу cron
     if (activeTasks[chatId]) {
@@ -288,6 +253,47 @@ bot.onText(/\/published/, async (msg) => {
   } catch (error) {
     console.error('Ошибка при отметке публикации:', error);
     bot.sendMessage(chatId, 'Произошла ошибка при отметке публикации.');
+  }
+}
+
+// Главный обработчик сообщений
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+  const text = msg.text;
+
+  try {
+    if (text === '/start') {
+      await handleStartCommand(chatId);
+    } 
+    else if (text === '/remind' || text === '🔔 Включить напоминания') {
+      await handleRemindCommand(chatId);
+    }
+    else if (text === '/stop' || text === '🔕 Выключить напоминания') {
+      await handleStopCommand(chatId);
+    }
+    else if (text === '/published' || text === '✅ Публикация сделана') {
+      await handlePublishedCommand(chatId);
+    }
+    else if (text === '⏱ 30 мин') {
+      await handleIntervalCommand(chatId, 30);
+    }
+    else if (text === '⏱ 60 мин') {
+      await handleIntervalCommand(chatId, 60);
+    }
+    else if (text === '⏱ 120 мин') {
+      await handleIntervalCommand(chatId, 120);
+    }
+    else if (text.startsWith('/interval')) {
+      const minutes = parseInt(text.split(' ')[1]);
+      await handleIntervalCommand(chatId, minutes);
+    }
+    else {
+      // Если сообщение не распознано, показываем клавиатуру
+      sendCommandKeyboard(chatId);
+    }
+  } catch (error) {
+    console.error('Ошибка при обработке сообщения:', error);
+    bot.sendMessage(chatId, 'Произошла ошибка при обработке команды.');
   }
 });
 
